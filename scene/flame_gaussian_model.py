@@ -21,8 +21,7 @@ from roma import rotmat_to_unitquat, quat_xyzw_to_wxyz, rotmat_to_rotvec, specia
 
 class FlameGaussianModel(GaussianModel):
     def __init__(self, sh_degree : int, sg_degree: int, disable_flame_static_offset=False, not_finetune_flame_params=False,\
-        n_shape=300, n_expr=100, train_kinematic=False, DTF=False,
-        invT_Jacobian = False,  densification_type='arithmetic_mean', detach_eyeball_geometry = False, \
+        n_shape=300, n_expr=100, train_kinematic=False, DTF=False, densification_type='arithmetic_mean', detach_eyeball_geometry = False, \
             ):
         super().__init__(sh_degree, sg_degree)
         
@@ -48,7 +47,7 @@ class FlameGaussianModel(GaussianModel):
         
         self.train_kinematic = train_kinematic
         self.DTF = DTF
-        self.invT_Jacobian = invT_Jacobian
+        # self.invT_Jacobian = invT_Jacobian
         
    
         self.densification_type = densification_type

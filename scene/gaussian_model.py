@@ -72,7 +72,7 @@ class GaussianModel:
         # for binding GaussianModel to a mesh
         self.face_center = None
         self.face_scaling = None
-        self.face_orien_mat = None
+        self.face_orien_mat = None  # Jacobian
         self.face_orien_quat = None
         self.binding = None  # gaussian index to face index
         self.binding_counter = None  # number of points bound to each face
@@ -85,10 +85,10 @@ class GaussianModel:
         self.train_kinematic = False
         #! have to check kinematic and kinematic dist not both
 
-        self.blended_Jacobian = None
+        # self.blended_Jacobian = None
         # self.scaling_aniso = False
         self.DTF = False
-        self.invT_Jacobian = False
+        # self.invT_Jacobian = False
         self.densification_type = 'arithmetic_mean'
         #! for spec gs
         self._features_sg = torch.empty(0)

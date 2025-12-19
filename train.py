@@ -61,8 +61,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
        
     
         gaussians = FlameGaussianModel(dataset.sh_degree, dataset.sg_degree, dataset.disable_flame_static_offset, dataset.not_finetune_flame_params, n_shape=n_shape, n_expr=n_expr, 
-            train_kinematic=pipe.train_kinematic, DTF = pipe.DTF, invT_Jacobian=pipe.invT_Jacobian,
-            densification_type=opt.densification_type, detach_eyeball_geometry = pipe.detach_eyeball_geometry)
+            train_kinematic=pipe.train_kinematic, DTF = pipe.DTF, densification_type=opt.densification_type, detach_eyeball_geometry = pipe.detach_eyeball_geometry)
         try:
             mesh_renderer = NVDiffRenderer()
         except:
@@ -72,6 +71,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         gaussians = GaussianModel(dataset.sh_degree)
     scene = Scene(dataset, gaussians)
     gaussians.training_setup(opt) #! from here all trainble parameters are set(e.g., flame_codes, xyz, scaling, dynamic_offset, opacity)
+
+
+    for i, param_group in enumerate(gaussians.optimizer.param_groups):
+        print(f"Group {i}: {param_group['name']}")
+        for p in param_group['params']:
+            print("  ", p.shape, p.requires_grad)
+
+    
     if checkpoint:
         (model_params, first_iter) = torch.load(checkpoint)
         gaussians.restore(model_params, opt)
@@ -697,6 +704,50 @@ if __name__ == "__main__":
 
     # Initialize system state (RNG)
     safe_state(args.quiet)
+
+
+
+
+
+     # print parameters
+    print("\n" + "=" * 80)
+    print("TRAINING CONFIGURATION")
+    print("=" * 80)
+
+    model_args = lp.extract(args)
+    opt_args = op.extract(args)
+    pipe_args = pp.extract(args)
+
+    print("\n=== Model Parameters ===")
+    for attr in sorted(dir(model_args)):
+        if not attr.startswith('_'):
+            value = getattr(model_args, attr)
+            print(f"  {attr:30} : {value}")
+
+    print("\n=== Optimization Parameters ===")
+    for attr in sorted(dir(opt_args)):
+        if not attr.startswith('_'):
+            value = getattr(opt_args, attr)
+            print(f"  {attr:30} : {value}")
+
+    print("\n=== Pipeline Parameters ===")
+    for attr in sorted(dir(pipe_args)):
+        if not attr.startswith('_'):
+            value = getattr(pipe_args, attr)
+            print(f"  {attr:30} : {value}")
+
+    print("\n=== Other Parameters ===")
+    other_params = ['ip', 'port', 'debug_from', 'detect_anomaly', 'interval',
+                    'test_iterations', 'save_iterations', 'quiet', 'checkpoint_iterations', 'start_checkpoint']
+    for param in other_params:
+        if hasattr(args, param):
+            value = getattr(args, param)
+            print(f"  {param:30} : {value}")
+
+    print("=" * 80 + "\n")
+
+
+
 
     # Start GUI server, configure and run training
     network_gui.init(args.ip, args.port)

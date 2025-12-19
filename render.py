@@ -341,12 +341,8 @@ def render_set(dataset, name, iteration, views, gaussians, pipeline, background,
                
         else:
             specular_color = None
-        render_bucket = render(view, gaussians, pipeline, background, 
-                               backface_culling_smooth=dataset.backface_culling_smooth,
-                               backface_culling_hard=dataset.backface_culling_hard,
-                               iter=han_window_iter,
-                               specular_color= specular_color,
-                                spec_only_eyeball = pipeline.spec_only_eyeball)
+        render_bucket = render(view, gaussians, pipeline, background,
+                               specular_color= specular_color,)
         # breakpoint()
         
             
@@ -444,10 +440,8 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
                 n_shape = 300
                 n_expr = 100   
             # gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset)
-            gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset, dataset.not_finetune_flame_params,\
-                train_normal = False, n_shape=n_shape, n_expr=n_expr, train_kinematic=pipeline.train_kinematic, \
-                DTF = pipeline.DTF, invT_Jacobian=pipeline.invT_Jacobian,
-                detach_eyeball_geometry = pipeline.detach_eyeball_geometry)
+            gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset, dataset.not_finetune_flame_params, n_shape=n_shape, n_expr=n_expr, train_kinematic=pipeline.train_kinematic, \
+                DTF = pipeline.DTF, detach_eyeball_geometry = pipeline.detach_eyeball_geometry)
         else:
             gaussians = GaussianModel(dataset.sh_degree)
         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)

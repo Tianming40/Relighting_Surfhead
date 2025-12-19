@@ -51,15 +51,18 @@ class ModelParams(ParamGroup):
         self._source_path = ""  # Path to the source data set
         self._target_path = ""  # Path to the target data set for pose and expression transfer
         self._model_path = ""  # Path to the folder to save trained models
+        self.lighting_path = ""
         self._images = "images"
         self._resolution = -1
         self._white_background = False
         self.data_device = "cuda"
         self.eval = False
-        self.bind_to_mesh = False
+        self.bind_to_mesh = True
         self.disable_flame_static_offset = False
         self.not_finetune_flame_params = False
         self.select_camera_id = -1
+        self.backface_culling_smooth = True
+        self.backface_culling_hard =  False
         super().__init__(parser, "Loading Parameters", sentinel)
 
     def extract(self, args):
@@ -73,8 +76,8 @@ class PipelineParams(ParamGroup):
         self.compute_cov3D_python = False
         self.depth_ratio = 0.0
         self.debug = False
-        self.train_kinematic = False
-        self.DTF = False
+        self.train_kinematic = True
+        self.DTF = True
         self.rm_bg = False
         self.SGs = False
         self.sg_type = 'asg'
@@ -82,6 +85,8 @@ class PipelineParams(ParamGroup):
         self.detach_teeth_geometry = False
         self.amplify_teeth_grad = False
         self.detach_boundary = False
+        self.tight_pruning_threshold = 0.0
+        self.spec_only_eyeball = False
         super().__init__(parser, "Pipeline Parameters")
 
 class OptimizationParams(ParamGroup):
@@ -112,10 +117,10 @@ class OptimizationParams(ParamGroup):
         self.lambda_dssim = 0.2
         self.lambda_xyz = 1e-2
         self.threshold_xyz = 1.
-        self.metric_xyz = False
+        self.metric_xyz = True
         self.lambda_scale = 1.
         self.threshold_scale = 0.6
-        self.metric_scale = False
+        self.metric_scale = True
         self.lambda_dynamic_offset = 0.
         self.lambda_laplacian = 0.
         self.lambda_dynamic_offset_std = 0  #1.
@@ -125,8 +130,8 @@ class OptimizationParams(ParamGroup):
         #! for 2dgs
         self.percent_dense = 0.01
         self.lambda_dssim = 0.2
-        self.lambda_dist = 0.  # 100.0
-        self.lambda_normal = 0.  # 0.05
+        self.lambda_dist = 100 # 100.0
+        self.lambda_normal = 0.05  # 0.05
         self.opacity_cull = 0.05
         
         #! for binding inheritance
@@ -135,7 +140,7 @@ class OptimizationParams(ParamGroup):
 
         self.densification_type = 'arithmetic_mean'
 
-        self.lambda_eye_alpha = 0.
+        self.lambda_eye_alpha = 0.1
 
         self.specular_lr_max_steps = 300_000
         super().__init__(parser, "Optimization Parameters")
