@@ -48,10 +48,11 @@ class ModelParams(ParamGroup):
     def __init__(self, parser, sentinel=False):
         self.sh_degree = 3
         self.sg_degree = 24
-        self._source_path = ""  # Path to the source data set
+        self._source_path = "/home/tzhang/NeRSemble/074/cluster/ikarus/sqian/project/dynamic-head-avatars/code/multi-view-head-tracker/export/074_EMO-1_v16_DS2-0.5x_lmkSTAR_teethV3_SMOOTH_offsetS_whiteBg_maskBelowLine"  # Path to the source data set
         self._target_path = ""  # Path to the target data set for pose and expression transfer
         self._model_path = ""  # Path to the folder to save trained models
-        self.lighting_path = ""
+        self.lighting_path = "/home/tzhang/light_012.exr"
+        self.texture_path = "/home/tzhang/skin.jpg"
         self._images = "images"
         self._resolution = -1
         self._white_background = False
@@ -117,10 +118,10 @@ class OptimizationParams(ParamGroup):
         self.lambda_dssim = 0.2
         self.lambda_xyz = 1e-2
         self.threshold_xyz = 1.
-        self.metric_xyz = True
+        self.metric_xyz = False
         self.lambda_scale = 1.
         self.threshold_scale = 0.6
-        self.metric_scale = True
+        self.metric_scale = False
         self.lambda_dynamic_offset = 0.
         self.lambda_laplacian = 0.
         self.lambda_dynamic_offset_std = 0  #1.

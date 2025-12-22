@@ -34,10 +34,10 @@ class PipelineConfig:
     compute_cov3D_python: bool = False
     convert_SHs_python: bool = False
     tight_pruning_threshold : float = 0.0
-    train_kinematic : bool = True
+    train_kinematic : bool = False
     SGs : bool =  False
     depth_ratio = 0.0
-    DTF = True
+    DTF = False
     rm_bg = False
     sg_type = 'asg'
     detach_eyeball_geometry = False
