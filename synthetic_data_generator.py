@@ -402,7 +402,7 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
     else:
 
         if not white_bg:
-            env_map = load_env_map_exr(env_path, device='cuda', scale=1.0)
+            env_map = load_env_map_exr(dataset.lighting_path, device='cuda', scale=1.0)
             background = render_background_from_env(env_map, camera_info, rotation_matrix=None)
             background_np = background.squeeze(0).cpu().numpy()
         else:

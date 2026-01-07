@@ -30,7 +30,7 @@ from lpipsPyTorch import lpips
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
 from kornia.losses import inverse_depth_smoothness_loss
-
+import json
 try:
     from torch.utils.tensorboard import SummaryWriter
     TENSORBOARD_FOUND = True
@@ -78,6 +78,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         for p in param_group['params']:
             print("  ", p.shape, p.requires_grad)
 
+    config = {
+    "dataset": vars(dataset),
+    "opt": vars(opt),
+    "pipe": vars(pipe),
+    }
+    with open(os.path.join(args.model_path, "config.json"), "w") as f:
+        json.dump(config, f, indent=2)
     
     if checkpoint:
         (model_params, first_iter) = torch.load(checkpoint)

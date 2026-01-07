@@ -48,9 +48,9 @@ class ModelParams(ParamGroup):
     def __init__(self, parser, sentinel=False):
         self.sh_degree = 3
         self.sg_degree = 24
-        self._source_path = "/home/tzhang/NeRSemble/074/cluster/ikarus/sqian/project/dynamic-head-avatars/code/multi-view-head-tracker/export/074_EMO-1_v16_DS2-0.5x_lmkSTAR_teethV3_SMOOTH_offsetS_whiteBg_maskBelowLine"  # Path to the source data set
+        self._source_path = "/home/tzhang/synthetic_data"  # Path to the source data set
         self._target_path = ""  # Path to the target data set for pose and expression transfer
-        self._model_path = ""  # Path to the folder to save trained models
+        self._model_path = "./output/2026"  # Path to the folder to save trained models
         self.lighting_path = "/home/tzhang/light_012.exr"
         self.texture_path = "/home/tzhang/skin.jpg"
         self._images = "images"
