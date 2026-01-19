@@ -440,8 +440,10 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
                 n_shape = 300
                 n_expr = 100   
             # gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset)
-            gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset, dataset.not_finetune_flame_params, n_shape=n_shape, n_expr=n_expr, train_kinematic=pipeline.train_kinematic, \
-                DTF = pipeline.DTF, detach_eyeball_geometry = pipeline.detach_eyeball_geometry)
+            gaussians = FlameGaussianModel(dataset.sh_degree, dataset.disable_flame_static_offset, dataset.not_finetune_flame_params,
+             n_shape=n_shape, n_expr=n_expr, train_kinematic=pipeline.train_kinematic,
+                DTF = pipeline.DTF,
+                detach_eyeball_geometry = pipeline.detach_eyeball_geometry)
         else:
             gaussians = GaussianModel(dataset.sh_degree)
         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)

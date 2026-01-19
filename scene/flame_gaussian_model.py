@@ -20,10 +20,11 @@ from roma import rotmat_to_unitquat, quat_xyzw_to_wxyz, rotmat_to_rotvec, specia
 
 
 class FlameGaussianModel(GaussianModel):
-    def __init__(self, sh_degree : int, sg_degree: int, disable_flame_static_offset=False, not_finetune_flame_params=False,\
-        n_shape=300, n_expr=100, train_kinematic=False, DTF=False, densification_type='arithmetic_mean', detach_eyeball_geometry = False, \
+    def __init__(self, sh_degree : int, sg_degree: int,  brdf_dim : int, brdf_mode : str, brdf_envmap_res: int, disable_flame_static_offset=False, not_finetune_flame_params=False,\
+        n_shape=300, n_expr=100, train_kinematic=False, DTF=False,
+        invT_Jacobian = False,  densification_type='arithmetic_mean', detach_eyeball_geometry = False
             ):
-        super().__init__(sh_degree, sg_degree)
+        super().__init__(sh_degree, sg_degree,brdf_dim,brdf_mode,brdf_envmap_res)
         
         self.disable_flame_static_offset = disable_flame_static_offset
         self.not_finetune_flame_params = not_finetune_flame_params
@@ -47,7 +48,7 @@ class FlameGaussianModel(GaussianModel):
         
         self.train_kinematic = train_kinematic
         self.DTF = DTF
-        # self.invT_Jacobian = invT_Jacobian
+        self.invT_Jacobian = invT_Jacobian
         
    
         self.densification_type = densification_type
@@ -383,3 +384,109 @@ class FlameGaussianModel(GaussianModel):
             self._scaling = self._scaling[mask]
             self._rotation = self._rotation[mask]
             self._opacity = self._opacity[mask]
+
+
+
+
+    def set_training_stage(self, stage):
+        self.training_stage = stage
+
+        if stage == 1:
+            self.set_requires_grad("specular", False)
+            # self.brdf_mlp.base.requires_grad(False)
+
+
+            # self.set_requires_grad("xyz", True)
+            # self.set_requires_grad("scaling", True)
+            # self.set_requires_grad("rotation", True)
+            # self.set_requires_grad("opacity", True)
+            # self.set_requires_grad("features_dc", True)
+            # self.set_requires_grad("features_rest", True)
+            # self.set_requires_grad("features_sg", True)
+
+        elif stage == 2:
+
+            self.set_requires_grad("specular", True)
+            self.set_requires_grad("features_dc", True)
+            self.set_requires_grad("features_rest", True)
+            self.brdf_mlp.requires_grad_(False)
+
+            self.set_requires_grad("xyz", False)
+            self.set_requires_grad("scaling", False)
+            self.set_requires_grad("rotation", False)
+            self.set_requires_grad("opacity", False)
+            self.set_requires_grad("features_sg", False)
+            self.set_requires_grad("blend_weight", False)
+
+            self.flame_param['rotation'].requires_grad = False
+            self.flame_param['neck_pose'].requires_grad = False
+            self.flame_param['jaw_pose'].requires_grad = False
+            self.flame_param['eyes_pose'].requires_grad = False
+
+            # translation
+            self.flame_param['translation'].requires_grad = False
+
+            # expression
+            self.flame_param['expr'].requires_grad = False
+
+        elif stage == 3:
+
+            self.set_requires_grad("specular", True)
+            self.set_requires_grad("roughness", True)
+            self.brdf_mlp.requires_grad_(True)
+
+            self.set_requires_grad("xyz", True)
+            self.set_requires_grad("scaling", True)
+            self.set_requires_grad("rotation", True)
+            self.set_requires_grad("opacity", True)
+            self.set_requires_grad("features_dc", True)
+            self.set_requires_grad("features_rest", True)
+            self.set_requires_grad("features_sg", True)
+
+    def build_param_groups(self):
+        """Split parameters into named groups."""
+
+        param_groups = {}
+
+        # Geometry parameters
+        param_groups["geometry"] = [
+            self._xyz,
+            self._scaling,
+            self._rotation,
+            self.opacity,
+            self._features_dc,
+            self._features_rest,
+        ]
+
+        # BRDF parameters (diffuse, roughness, specular, etc.)
+        if hasattr(self, "brdf_mlp"):
+            param_groups["brdf"] = list(self.brdf_mlp.parameters())
+        else:
+            param_groups["brdf"] = []
+
+        # Envmap parameters (SG or MLP; depends on implementation)
+        if hasattr(self, "envmap"):
+            param_groups["envmap"] = [self.envmap]
+        else:
+            param_groups["envmap"] = []
+
+        # FLAME parameters (optional)
+        flame_params = []
+        if hasattr(self, "flame_shape"):
+            flame_params += [self.flame_shape]
+        if hasattr(self, "flame_expr"):
+            flame_params += [self.flame_expr]
+        param_groups["flame"] = flame_params
+
+        return param_groups
+
+    def freeze_all(self):
+        for gname, params in self.param_groups.items():
+            for p in params:
+                p.requires_grad = False
+
+    def unfreeze(self, groups):
+        """groups = list of names: ["geometry"], ["brdf","envmap"], etc."""
+        for name in groups:
+            for p in self.param_groups[name]:
+                p.requires_grad = True

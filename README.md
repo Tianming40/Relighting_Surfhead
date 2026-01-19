@@ -194,7 +194,10 @@ A complete evaluation on the validation set (novel-view synthesis) and test set 
   Influence of primitive Normal's norm. This is required when DTF is on state.
   #### --train_kinematic
   Train with Jacobian Blend Skinning (JBS). 
-
+  #### --tight_pruning_threshold = 0.0
+  rendering quality, 0.0 means no pruning. high quality，and default
+  #### --spec_only_eyeball = false
+ 
 
 
 </details>
@@ -216,7 +219,7 @@ TBD
 
 TBD
 
-
+test
 
 ## Citing
 If you find our work useful, please consider citing:

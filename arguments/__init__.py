@@ -48,11 +48,10 @@ class ModelParams(ParamGroup):
     def __init__(self, parser, sentinel=False):
         self.sh_degree = 3
         self.sg_degree = 24
-        self._source_path = "/home/tzhang/synthetic_data"  # Path to the source data set
+        self._source_path = "/home/tzhang/sythetic_data"  # Path to the source data set
+        self.relighting_path = "Path/TO/relightingpath"
         self._target_path = ""  # Path to the target data set for pose and expression transfer
-        self._model_path = "./output/2026"  # Path to the folder to save trained models
-        self.lighting_path = "/home/tzhang/light_012.exr"
-        self.texture_path = "/home/tzhang/skin.jpg"
+        self._model_path = "./output"  # Path to the folder to save trained models
         self._images = "images"
         self._resolution = -1
         self._white_background = False
@@ -64,11 +63,16 @@ class ModelParams(ParamGroup):
         self.select_camera_id = -1
         self.backface_culling_smooth = True
         self.backface_culling_hard =  False
+
+        self.brdf_dim = 3
+        self.brdf_mode = "envmap"
+        self.brdf_envmap_res = 64
         super().__init__(parser, "Loading Parameters", sentinel)
 
     def extract(self, args):
         g = super().extract(args)
         g.source_path = os.path.abspath(g.source_path)
+        g.brdf = g.brdf_dim >= 0
         return g
 
 class PipelineParams(ParamGroup):
@@ -88,12 +92,23 @@ class PipelineParams(ParamGroup):
         self.detach_boundary = False
         self.tight_pruning_threshold = 0.0
         self.spec_only_eyeball = False
+
+        self.brdf = True
         super().__init__(parser, "Pipeline Parameters")
+
+    def extract(self, args):
+        g = super().extract(args)
+        g.brdf = args.brdf_dim>=0
+        if g.brdf:
+            g.convert_SHs_python = True
+        g.brdf_mode = args.brdf_mode
+        return g
 
 class OptimizationParams(ParamGroup):
     def __init__(self, parser):
         # 3D Gaussians
         self.iterations = 600_000  # 30_000 (original)
+        self.brdf_iterations = 300
         self.position_lr_init = 0.005  # (scaled up according to mean triangle scale)  #0.00016 (original)#! *1/0.032
         self.position_lr_final = 0.00005  # (scaled up according to mean triangle scale) # 0.0000016 (original)
         self.position_lr_delay_mult = 0.01
@@ -118,10 +133,10 @@ class OptimizationParams(ParamGroup):
         self.lambda_dssim = 0.2
         self.lambda_xyz = 1e-2
         self.threshold_xyz = 1.
-        self.metric_xyz = False
+        self.metric_xyz = True
         self.lambda_scale = 1.
         self.threshold_scale = 0.6
-        self.metric_scale = False
+        self.metric_scale = True
         self.lambda_dynamic_offset = 0.
         self.lambda_laplacian = 0.
         self.lambda_dynamic_offset_std = 0  #1.
@@ -131,7 +146,7 @@ class OptimizationParams(ParamGroup):
         #! for 2dgs
         self.percent_dense = 0.01
         self.lambda_dssim = 0.2
-        self.lambda_dist = 100 # 100.0
+        self.lambda_dist = 100  # 100.0
         self.lambda_normal = 0.05  # 0.05
         self.opacity_cull = 0.05
         
@@ -144,6 +159,20 @@ class OptimizationParams(ParamGroup):
         self.lambda_eye_alpha = 0.1
 
         self.specular_lr_max_steps = 300_000
+
+        self.brdf_mlp_lr_init = 1.6e-2
+        self.brdf_mlp_lr_final = 1.6e-3
+        self.brdf_mlp_lr_delay_mult = 0.01
+        self.brdf_mlp_lr_max_steps = 30_000
+        self.normal_lr = 0.0002
+        self.specular_lr = 0.0002
+        self.roughness_lr = 0.0002
+        self.normal_reg_from_iter = 0
+        self.normal_reg_util_iter = 30_000
+        self.lambda_zero_one = 1e-3
+        self.lambda_predicted_normal = 2e-1
+        self.lambda_delta_reg = 1e-3
+        self.fix_brdf_lr = 0
         super().__init__(parser, "Optimization Parameters")
 
 def get_combined_args(parser : ArgumentParser):
