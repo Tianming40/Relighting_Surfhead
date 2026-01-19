@@ -48,10 +48,10 @@ class ModelParams(ParamGroup):
     def __init__(self, parser, sentinel=False):
         self.sh_degree = 3
         self.sg_degree = 24
-        self._source_path = "/home/tzhang/sythetic_data"  # Path to the source data set
-        self.relighting_path = "Path/TO/relightingpath"
+        self._source_path = "/home/tzhang/synthetic_data"  # Path to the source data set
+        self.relighting_path = "/home/tzhang/light_012.exr"
         self._target_path = ""  # Path to the target data set for pose and expression transfer
-        self._model_path = "./output"  # Path to the folder to save trained models
+        self._model_path = "./output/stage1_retry"  # Path to the folder to save trained models
         self._images = "images"
         self._resolution = -1
         self._white_background = False
@@ -64,7 +64,7 @@ class ModelParams(ParamGroup):
         self.backface_culling_smooth = True
         self.backface_culling_hard =  False
 
-        self.brdf_dim = 3
+        self.brdf_dim = 0
         self.brdf_mode = "envmap"
         self.brdf_envmap_res = 64
         super().__init__(parser, "Loading Parameters", sentinel)
