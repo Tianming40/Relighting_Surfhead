@@ -44,11 +44,6 @@ class CameraDataset(torch.utils.data.Dataset):
             
             if camera.image is None:
                 image = Image.open(camera.image_path)
-                if random 0-360 du
-
-                brdf:
-  image= Image.open(camera.image_path. .. /name_lighting_ dushu)
-                想办法得遍历完了所有的 每次随机选择一个角度
             else:
                 image = camera.image
             # breakpoint()

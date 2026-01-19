@@ -130,7 +130,7 @@ def create_light():
 
     return env_light
 
-def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, use_test_camera=False, bg_rotation= False, white_bg = True):
+def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, use_test_camera=False, bg_rotation= False, white_bg = F):
 
     if use_test_camera:
         test_camer(camera_info)
@@ -139,10 +139,11 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
 
     kd_texture = texture.load_texture2D(dataset.texture_path)
     Highth, Weidth = kd_texture.data.shape[1:3]
+    # print(f"kd_texture max: {kd_texture.data.max().item()}, min: {kd_texture.data.min().item()}, mean: {kd_texture.data.mean().item()}")
     specular_map = torch.zeros(Highth, Weidth, 3, device='cuda')
     specular_map[..., 0] = 0.04  # specular intensity for non-metal
-    specular_map[..., 1] = 0.2  # roughness
-    specular_map[..., 2] = 0.2  # metallic
+    specular_map[..., 1] = 0.4  # roughness
+    specular_map[..., 2] = 0.001  # metallic
     simple_material = material.Material({
         'bsdf': 'pbr',
         'kd': kd_texture,
@@ -156,9 +157,11 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
 
 
     if not white_bg:
-        env_light = light.load_env(dataset.lighting_path)
+        env_light = light.load_env(dataset.lighting_path)  # Scale down HDR to avoid clamp
+        # print(f"env_light.base max: {env_light.base.max().item()}" , f"min: {env_light.base.min().item()}", f"mean: {env_light.base.mean().item()}")
     else:
         env_light = create_light()
+        print("Using white background light")
 
 
 
@@ -171,7 +174,7 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
     normal = mesh_obj.v_nrm
 
     vertex_uv_indices = torch.full((mesh_obj.v_pos.shape[0],), -1, dtype=torch.long, device='cuda')
-    for face_idx in range(10144):
+    for face_idx in range(mesh_obj.t_pos_idx.shape[0]):
         for i in range(3):
             vertex_idx = mesh_obj.t_pos_idx[face_idx, i]
             uv_idx = mesh_obj.t_tex_idx[face_idx, i]
@@ -183,7 +186,7 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
     uv_coords = correct_uvs.unsqueeze(0).unsqueeze(0)  # [1, 1, 5143, 2]
     derivs = torch.zeros(1, 1, 5143, 4, device='cuda')
     kd_colors = kd_texture.sample(uv_coords, derivs).squeeze(0).squeeze(0)
-    ks_values = torch.tensor([0.04, 0.4, 0.2], device='cuda').repeat(mesh_obj.v_pos.shape[0], 1)
+    ks_values = torch.tensor([0.04, 0.4, 0.001], device='cuda').repeat(mesh_obj.v_pos.shape[0], 1)
 
     os.makedirs('video_material', exist_ok=True)
     save_root = 'video_material'
@@ -228,10 +231,9 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
             color, brdf_pkg = env_light.shade3(gbpos[None, None, ...], normal[None, None, ...], kd_colors[None, None, ...], ks_values[None, None, ...], view_pos)
 
             colors_precomp = color.squeeze()  # (N, 3)
+            print(f"colors_precomp max: {colors_precomp.max().item()}, min: {colors_precomp.min().item()}")
             diffuse_color = brdf_pkg['diffuse'].squeeze()  # (N, 3)
             specular_color = brdf_pkg['specular'].squeeze()  # (N, 3)
-
-
             colors_np = colors_precomp.detach().cpu().numpy()
             vertices_np = mesh_obj.v_pos.detach().cpu().numpy()
             faces_np = mesh_obj.t_pos_idx.detach().cpu().numpy()
@@ -412,6 +414,7 @@ def nvdiffrecrender(dataset, gaussians, camera_info, timestep, total_frame_num, 
                                            ks_values[None, None, ...], view_pos)
 
         colors_precomp = color.squeeze()  # (N, 3)
+        # print(f"colors_precomp max: {colors_precomp.max().item()}, min: {colors_precomp.min().item()}")
         diffuse_color = brdf_pkg['diffuse'].squeeze()  # (N, 3)
         specular_color = brdf_pkg['specular'].squeeze()  # (N, 3)
 
@@ -782,7 +785,7 @@ if __name__ == "__main__":
 
 
 
-def synthetic_generator(dataset, opt, pipe):
+def synthetic_generator(dataset, opt, pipe, args):
     
     if dataset.bind_to_mesh:
         
@@ -824,10 +827,10 @@ def synthetic_generator(dataset, opt, pipe):
             gaussians=scene.gaussians,
             camera_info=camera,
             timestep=timestep,
-            total_frame_num=120,
-            use_test_camera=False,
-            bg_rotation=False,
-            white_bg=True
+            total_frame_num=args.total_frame_num,
+            use_test_camera=args.use_test_camera,
+            bg_rotation=args.bg_rotation,
+            white_bg=args.white_bg
         )
 
 
@@ -838,10 +841,28 @@ if __name__ == "__main__":
     lp = ModelParams(parser)
     op = OptimizationParams(parser)
     pp = PipelineParams(parser)
+
+    # Add new arguments for nvdiffrecrender parameters
+    parser.add_argument('--total_frame_num', type=int, default=120, help='Total number of frames for rendering')
+    parser.add_argument('--use_test_camera', action='store_true', help='Use test camera for rendering')
+    parser.add_argument('--bg_rotation', action='store_true', help='Enable background rotation')
+    parser.add_argument('--white_bg', action='store_true', help='Use white background')
   
     args = parser.parse_args(sys.argv[1:])
    
-    synthetic_generator(lp.extract(args), op.extract(args), pp.extract(args))
+    if not args.model_path:
+        if os.getenv('OAR_JOB_ID'):
+            unique_str=os.getenv('OAR_JOB_ID')
+        else:
+            unique_str = str(uuid.uuid4())
+        args.model_path = os.path.join("./output/", unique_str[0:10])
+        
+    # Set up output folder
+    print("Output folder: {}".format(args.model_path))
+    os.makedirs(args.model_path, exist_ok = True)
+
+
+    synthetic_generator(lp.extract(args), op.extract(args), pp.extract(args), args)
 
     # All done
     print("\nTraining complete.")
